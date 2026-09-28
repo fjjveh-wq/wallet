@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Wallet</title>
+<style>
+:root{--panel2:#1d1d21;--muted:#98989f;--green:#37e68a;--red:#ff6262}
+*{box-sizing:border-box}body{margin:0;background:#060607;color:#f7f7f8;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+.app{max-width:430px;min-height:100vh;margin:auto;background:#09090b;padding:16px 18px 90px}
+.top{display:flex;align-items:center;justify-content:space-between;margin:4px 0 18px}.brand{display:flex;gap:10px;align-items:center;font-weight:700}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6d52ff,#d7cfff);display:grid;place-items:center;color:#111}
+.icons{display:flex;gap:6px}.icons button{background:none;border:0;color:#aaa;font-size:20px;cursor:pointer;padding:4px 7px}
+.muted{color:var(--muted);font-size:12px}.balance{font-size:37px;font-weight:750;letter-spacing:-1.5px;margin:3px 0 4px}
+.change{display:inline-block;padding:5px 8px;border-radius:7px;font-size:12px;font-weight:700}
+.up{background:#12301f;color:var(--green)}.down{background:#3a171a;color:#ff6d73}
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:22px 0}
+.action{background:var(--panel2);border:0;border-radius:13px;color:#eee;padding:12px 4px;font-size:11px;cursor:pointer}.action b{display:block;font-size:19px;color:#c4b8ff;margin-bottom:4px}
+.card{background:linear-gradient(135deg,#17171b,#111115);border:1px solid #28282d;border-radius:17px;padding:15px;margin:10px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}.cash{font-size:18px;font-weight:700}
+.btn{background:#bbaeff;color:#16131f;border:0;border-radius:9px;padding:8px 11px;font-weight:800;cursor:pointer}
+.btn.sec{background:#2a2a30;color:#ddd}.btn.del{background:#3a171a;color:#ff8a8f}
+h3{font-size:16px;margin:25px 0 10px}
+.token{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid #202024}
+.coin{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:#242429;flex:none}
+.tn{font-weight:700;font-size:14px}.amount{margin-left:auto;text-align:right;font-size:13px}.usd{font-size:11px;margin-top:3px}.pos{color:var(--green)}.neg{color:var(--red)}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100%);height:70px;background:rgba(20,20,23,.96);display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #252529}
+.nav button{background:none;border:0;color:#777;font-size:11px;cursor:pointer}.nav button.active{color:#bbaeff}.nav span{display:block;font-size:20px;margin-bottom:4px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);align-items:flex-end;justify-content:center;z-index:9}
+.sheet{width:min(430px,100%);max-height:92vh;overflow:auto;background:#151518;border-radius:22px 22px 0 0;padding:22px}.sheet h2{margin:0 0 12px}
+.sheet input,.sheet select{width:100%;padding:12px;border-radius:12px;border:1px solid #303036;background:#0d0d0f;color:#fff;font-size:16px;margin:6px 0}
+.sheet label{font-size:12px;color:var(--muted);display:block;margin-top:8px}
+.primary{width:100%;padding:14px;border:0;border-radius:12px;background:#a996ff;color:#15121e;font-weight:800;margin-top:12px;cursor:pointer}
+.close{float:right;background:none;border:0;color:#aaa;font-size:24px;cursor:pointer}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.g3 input{margin:2px 0;padding:9px;font-size:14px}
+.small{font-size:10px;color:#666;text-align:center;margin-top:18px}
+#toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#2b2540;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;display:none;z-index:20}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="app">
+  <div class="top"><div class="brand"><div class="avatar" id="ava">W</div><span id="wname">Wallet</span></div>
+    <div class="icons"><button onclick="fs()" title="Vollbild">⛶</button><button onclick="openM('mAct')" title="Aktivität">◷</button><button onclick="openSet()" title="Einstellungen">⚙</button></div></div>
+  <div class="muted">Gesamtguthaben</div>
+  <div class="balance" id="balance"></div>
+  <span class="change" id="chg"></span>
+
+  <div class="actions">
+    <button class="action" onclick="openSend()"><b>↗</b>Send</button>
+    <button class="action" onclick="openSwap()"><b>⇄</b>Swap</button>
+    <button class="action" onclick="receive()"><b>▦</b>Receive</button>
+    <button class="action" onclick="openBuy()"><b>＋</b>Buy</button>
+  </div>
+
+  <div class="card"><div class="row"><div><div class="muted">Cash Balance</div><div class="cash" id="cash"></div></div><button class="btn" onclick="addCash()">Add Cash</button></div></div>
+
+  <h3>Tokens</h3><div id="tokens"></div>
+  <h3>Recent activity</h3><div id="acts"></div>
+  <div class="small">Demo-App · keine echten Zahlungen oder Kryptowährungen</div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="window.scrollTo(0,0)"><span>⌂</span>Home</button>
+  <button onclick="document.getElementById('tokens').scrollIntoView({behavior:'smooth'})"><span>▣</span>Wallet</button>
+  <button onclick="openSend()"><span>↗</span>Send</button>
+  <button onclick="receive()"><span>◉</span>Receive</button>
+</div>
+
+<!-- Send -->
+<div class="modal" id="mSend" onclick="bg(event,this)"><div class="sheet"><button class="close" onclick="closeM()">×</button><h2>Senden</h2>
+  <label>Token</label><select id="sTok"></select>
+  <label>Empfänger</label><input id="sTo" placeholder="Name / Adresse">
+  <label>Menge</label><input id="sAmt" type="number" min="0" step="any" placeholder="0.00">
+  <button class="primary" onclick="doSend()">Senden</button></div></div>
+<!-- Buy -->
+<div class="modal" id="mBuy" onclick="bg(event,this)"><div class="sheet"><button class="close" onclick="closeM()">×</button><h2>Kaufen</h2>
+  <label>Token</label><select id="bTok"></select>
+  <label>Betrag in USD (vom Cash)</label><input id="bUsd" type="number" min="0" step="any" placeholder="0.00">
+  <button class="primary" onclick="doBuy()">Kaufen</button></div></div>
+<!-- Swap -->
+<div class="modal" id="mSwap" onclick="bg(event,this)"><div class="sheet"><button class="close" onclick="closeM()">×</button><h2>Swap</h2>
+  <label>Von</label><select id="wFrom"></select>
+  <label>Nach</label><select id="wTo"></select>
+  <label>Menge (von)</label><input id="wAmt" type="number" min="0" step="any" placeholder="0.00">
+  <button class="primary" onclick="doSwap()">Swap ausführen</button></div></div>
+<!-- Activity -->
+<div class="modal" id="mAct" onclick="bg(event,this)"><div class="sheet"><button class="close" onclick="closeM()">×</button><h2>Aktivität</h2><div id="actAll"></div>
+  <button class="primary" style="background:#3a171a;color:#ff8a8f" onclick="S.acts=[];save();render();closeM()">Aktivität löschen</button></div></div>
+<!-- Settings -->
+<div class="modal" id="mSet" onclick="bg(event,this)"><div class="sheet"><button class="close" onclick="closeM()">×</button><h2>Einstellungen</h2>
+  <label>Wallet-Name</label><input id="fWname">
+  <label>Name in der Aktivität (z.B. „Received from …")</label><input id="fFriend">
+  <label>Cash in USD</label><input id="fCash" type="number" step="any">
+  <label>Änderung heute in % (z.B. -3.12)</label><input id="fChg" type="number" step="any">
+  <label style="margin-top:16px">Tokens · Symbol / Menge / Preis in USD</label><div id="fTokens"></div>
+  <button class="btn sec" style="margin-top:8px" onclick="addTok()">＋ Token hinzufügen</button>
+  <button class="primary" onclick="saveSet()">Speichern</button>
+  <button class="primary" style="background:#2a2a30;color:#ddd" onclick="if(confirm('Alles zurücksetzen?')){localStorage.removeItem('wallet');location.reload()}">Zurücksetzen</button>
+</div></div>
+
+<script>
+const DEF={wname:"Wallet",friend:"Alex",cash:0,chg:-3.12,
+ tokens:[{s:"SOL",n:"Solana",a:44.433,p:86640},{s:"BTC",n:"Bitcoin",a:2.85921,p:78180},{s:"USDC",n:"USDC",a:30000,p:1}],
+ acts:[{t:"in",who:"friend",v:2500,d:"Heute"},{t:"out",txt:"Market purchase",v:840,d:"Gestern"}]};
+let S;try{S=JSON.parse(localStorage.getItem("wallet"))||structuredClone(DEF)}catch(e){S=structuredClone(DEF)}
+const $=id=>document.getElementById(id);
+const save=()=>{try{localStorage.setItem("wallet",JSON.stringify(S))}catch(e){}};
+const money=n=>(n<0?"−":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const qty=n=>(+n).toLocaleString("en-US",{maximumFractionDigits:5});
+const total=()=>S.cash+S.tokens.reduce((t,k)=>t+k.a*k.p,0);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(t._t);t._t=setTimeout(()=>t.style.display="none",2200)}
+function bg(e,el){if(e.target===el)closeM()}
+function openM(id){closeM();$(id).style.display="flex"}
+function closeM(){document.querySelectorAll(".modal").forEach(m=>m.style.display="none")}
+function fs(){const d=document.documentElement;document.fullscreenElement?document.exitFullscreen():(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}
+function actText(a){return a.t==="in"?"Received from "+esc(S.friend):esc(a.txt||"")}
+function actHtml(a){const pos=a.t==="in";return `<div class="card"><div class="row"><span>${actText(a)}</span><b class="${pos?"pos":"neg"}">${pos?"+":"−"}${money(a.v).replace("−","")}</b></div><div class="muted">${esc(a.d)}</div></div>`}
+function addAct(a){S.acts.unshift(Object.assign({d:"Gerade eben"},a));S.acts=S.acts.slice(0,30)}
+function render(){
+ $("wname").textContent=S.wname;$("ava").textContent=(S.wname[0]||"W").toUpperCase();document.title=S.wname;
+ $("balance").textContent=money(total());$("cash").textContent=money(S.cash);
+ const c=$("chg");c.textContent=(S.chg<0?"−":"+")+Math.abs(S.chg).toFixed(2)+"% · Today";c.className="change "+(S.chg<0?"down":"up");
+ const tot=total();
+ $("tokens").innerHTML=S.tokens.map(k=>{const v=k.a*k.p,d=v*S.chg/100;
+  return `<div class="token"><div class="coin">${esc(k.s[0]||"?")}</div><div><div class="tn">${esc(k.n||k.s)}</div><div class="muted">${qty(k.a)} ${esc(k.s)}</div></div><div class="amount">${money(v)}<div class="usd ${d<0?"neg":"pos"}">${d<0?"−":"+"}${money(Math.abs(d)).replace("−","")}</div></div></div>`}).join("")||'<div class="muted">Keine Tokens</div>';
+ $("acts").innerHTML=S.acts.slice(0,3).map(actHtml).join("")||'<div class="muted">Noch keine Aktivität</div>';
+ $("actAll").innerHTML=S.acts.map(actHtml).join("")||'<div class="muted">Noch keine Aktivität</div>';
+}
+function fillSel(ids){const o=S.tokens.map((k,i)=>`<option value="${i}">${esc(k.s)} (${qty(k.a)})</option>`).join("");ids.forEach(id=>$(id).innerHTML=o)}
+function openSend(){fillSel(["sTok"]);$("sTo").value="";$("sAmt").value="";openM("mSend")}
+function doSend(){const k=S.tokens[$("sTok").value],n=+$("sAmt").value,to=$("sTo").value.trim()||"Unbekannt";
+ if(!k||!(n>0))return toast("Bitte Menge eingeben");if(n>k.a)return toast("Nicht genug "+k.s);
+ k.a-=n;addAct({t:"out",txt:"Sent to "+to,v:n*k.p});save();render();closeM();toast(qty(n)+" "+k.s+" gesendet")}
+function openBuy(){fillSel(["bTok"]);$("bUsd").value="";openM("mBuy")}
+function doBuy(){const k=S.tokens[$("bTok").value],u=+$("bUsd").value;
+ if(!k||!(u>0))return toast("Bitte Betrag eingeben");if(u>S.cash)return toast("Nicht genug Cash – erst 'Add Cash'");
+ S.cash-=u;k.a+=u/k.p;addAct({t:"out",txt:"Bought "+k.s,v:u});save();render();closeM();toast(k.s+" gekauft")}
+function openSwap(){if(S.tokens.length<2)return toast("Mind. 2 Tokens nötig");fillSel(["wFrom","wTo"]);$("wTo").value=1;$("wAmt").value="";openM("mSwap")}
+function doSwap(){const f=S.tokens[$("wFrom").value],t=S.tokens[$("wTo").value],n=+$("wAmt").value;
+ if(f===t)return toast("Verschiedene Tokens wählen");if(!(n>0))return toast("Bitte Menge eingeben");if(n>f.a)return toast("Nicht genug "+f.s);
+ const got=n*f.p/t.p;f.a-=n;t.a+=got;addAct({t:"out",txt:"Swap "+f.s+" → "+t.s,v:n*f.p});save();render();closeM();toast("Swap: "+qty(got)+" "+t.s)}
+function addCash(){const v=prompt("Wie viel Cash hinzufügen (USD)?","1000");const n=Number(v);if(!v||!(n>0))return;S.cash+=n;save();render()}
+function receive(){const code=Array.from({length:32},()=>"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.random()*32|0]).join("");
+ if(navigator.clipboard)navigator.clipboard.writeText(code).catch(()=>{});
+ const v=prompt("Empfangsadresse (kopiert). Betrag in USD empfangen? (leer = nur Adresse)","");const n=Number(v);
+ if(v&&n>0){S.cash+=n;addAct({t:"in",who:"friend",v:n});save();render();toast(money(n)+" empfangen")}else toast("Adresse: "+code.slice(0,8)+"…")}
+function openSet(){$("fWname").value=S.wname;$("fFriend").value=S.friend;$("fCash").value=S.cash;$("fChg").value=S.chg;
+ $("fTokens").innerHTML="";S.tokens.forEach(k=>tokRow(k));openM("mSet")}
+function tokRow(k){const d=document.createElement("div");d.className="row";d.style.cssText="flex-direction:column;align-items:stretch;margin-bottom:6px";
+ d.innerHTML=`<div class="g3"><input class="ts" placeholder="Symbol" value="${esc(k.s)}"><input class="ta" type="number" step="any" placeholder="Menge" value="${k.a}"><input class="tp" type="number" step="any" placeholder="Preis" value="${k.p}"></div><div class="row"><input class="tn2" placeholder="Name" value="${esc(k.n)}" style="margin:2px 0;padding:9px;font-size:14px"><button class="btn del" onclick="this.closest('.row').parentNode.remove()">✕</button></div>`;
+ $("fTokens").appendChild(d)}
+function addTok(){tokRow({s:"",n:"",a:0,p:1})}
+function saveSet(){S.wname=$("fWname").value.trim()||"Wallet";S.friend=$("fFriend").value.trim()||"Alex";
+ S.cash=Number($("fCash").value)||0;S.chg=Number($("fChg").value)||0;
+ S.tokens=[...document.querySelectorAll("#fTokens > div")].map(d=>{const s=d.querySelector(".ts").value.trim().toUpperCase();
+  return{s,n:d.querySelector(".tn2").value.trim()||s,a:Number(d.querySelector(".ta").value)||0,p:Number(d.querySelector(".tp").value)||0}}).filter(k=>k.s);
+ save();render();closeM();toast("Gespeichert")}
+render();
+</script>
+</body>
+</html>
